@@ -8,83 +8,47 @@ const token = process.env.BOT_TOKEN;
 
 const bot = new Telegraf(token);
 
-async function navigate(ctx, text, keyboard) {
-  await ctx.answerCbQuery();
-
-  await ctx.editMessageText(text, {
-    reply_markup: keyboard.reply_markup,
-  });
-}
-
-function mainMenu() {
-  return Markup.inlineKeyboard([
-    [Markup.button.callback("📘 Token & Conversion", "token_menu")],
-    [Markup.button.callback("🏆 Rewards & Scores", "reward_menu")],
-    [Markup.button.callback("💰 Staking & Vesting", "staking_menu")],
-    [Markup.button.callback("🛠 Wallet & Technical Help", "wallet_menu")],
-    [Markup.button.callback("📱 App & Platform Access", "app_menu")],
-    [Markup.button.callback("🔐 Privacy & Account Deletion", "privacy_menu")],
-    [Markup.button.callback("📞 Contact Support", "support_menu")],
-  ]);
-}
-
 bot.start((ctx) => {
   const firstname = ctx.message.chat.first_name;
-
-  ctx.reply(
-    `Hello ${firstname} 👋
-
+  const firstmessage = `Hello ${firstname} 👋 ,
 Welcome to JBC Support Bot.
 
-Please choose a category below.`,
-    mainMenu()
-  );
-});
-bot.action("main_menu", async (ctx) => {
-  await navigate(
-    ctx,
-    "Welcome to JBC Support Bot 🚀\n\nChoose a category below:",
-    mainMenu()
+I’m here to help you with common questions, account issues, transactions, wallet support, and more.
+
+Please describe your issue or choose an option below to get started. 🚀
+`;
+  ctx.reply(
+    firstmessage,
+    Markup.inlineKeyboard([
+      [Markup.button.callback("📘 Token & Conversion", "token_menu")],
+      [Markup.button.callback("🏆 Rewards & Scores", "reward_menu")],
+      [Markup.button.callback("💰 Staking & Vesting", "staking_menu")],
+      [Markup.button.callback("🛠 Wallet & Technical Help", "wallet_menu")],
+      [Markup.button.callback("📱 App & Platform Access", "app_menu")],
+      [Markup.button.callback("🔐 Privacy & Account Deletion", "privacy_menu")],
+      [Markup.button.callback("📞 Contact Support", "support_menu")],
+    ]),
   );
 });
 
 bot.action("token_menu", async (ctx) => {
-  await navigate(
-    ctx,
+  await ctx.answerCbQuery();
+
+  ctx.reply(
     "📘 Token & Conversion FAQs",
     Markup.inlineKeyboard([
       [
         Markup.button.callback(
           "Do I need BNB for conversion?",
-          "bnb_conversion"
+          "bnb_conversion",
         ),
       ],
-      [
-        Markup.button.callback(
-          "OLDJBC deducted but no veJBC",
-          "missing_vejbc"
-        ),
-      ],
-      [
-        Markup.button.callback(
-          "Unable to convert OLDJBC",
-          "unable_convert"
-        ),
-      ],
-      [
-        Markup.button.callback(
-          "Convert veJBC to JBCV2",
-          "convert_v2"
-        ),
-      ],
-      [
-        Markup.button.callback(
-          "Why can't I see JBCV2?",
-          "missing_v2"
-        ),
-      ],
+      [Markup.button.callback("OLDJBC deducted but no veJBC", "missing_vejbc")],
+      [Markup.button.callback("Unable to convert OLDJBC", "unable_convert")],
+      [Markup.button.callback("Convert veJBC to JBCV2", "convert_v2")],
+      [Markup.button.callback("Why can't I see JBCV2?", "missing_v2")],
       [Markup.button.callback("⬅ Back", "main_menu")],
-    ])
+    ]),
   );
 });
 
