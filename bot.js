@@ -11,6 +11,12 @@ const bot = new Telegraf(token);
 const activeTickets = new Map();
 const adminReplyMode = new Map();
 
+const ADMINS = [
+  7306001777,
+  1261376105,
+  // replace with your Telegram user ID
+];
+
 
 async function navigate(ctx, text, keyboard) {
   await ctx.answerCbQuery();
