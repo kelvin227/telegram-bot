@@ -10,9 +10,9 @@ const token = process.env.BOT_TOKEN;
 const bot = new Telegraf(token);
 const activeTickets = new Map();
 const adminReplyMode = new Map();
+const activeConversations = new Map();
 
 const ADMINS = [
-  7306001777,
   1261376105,
   // replace with your Telegram user ID
 ];
@@ -478,6 +478,14 @@ bot.action("support_menu", async (ctx) => {
   const userId = ctx.from.id;
 
   let ticket = activeTickets.get(userId);
+    const existingTicket =
+    activeTickets.get(userId);
+
+  if (existingTicket) {
+    return ctx.reply(
+      `You already have an open ticket (#${existingTicket.ticketId}). Please continue chatting here.`
+    );
+  }
 
   if (!ticket) {
     ticket = {
@@ -500,25 +508,50 @@ Please send your message.`
 });
 
 bot.on("text", async (ctx) => {
-  const senderId = ctx.from.id;
+    const senderId = ctx.from.id;
 
-  // ADMIN REPLY MODE
-  if (adminReplyMode.has(senderId)) {
-    const targetUser = adminReplyMode.get(senderId);
+  
+  ///admin setup
 
-    adminReplyMode.delete(senderId);
+  const supportGroupId2 = Number(
+    process.env.SUPPORT_GROUP_ID
+  );
+
+  if (
+    ctx.chat.id === supportGroupId2 &&
+    ADMINS.includes(senderId) &&
+    activeConversations.has(senderId)
+  ) {
+    const targetUser =
+      activeConversations.get(senderId);
 
     await bot.telegram.sendMessage(
       targetUser,
-      `📞 Support Response
-
-${ctx.message.text}`
+      `📞 Support\n\n${ctx.message.text}`
     );
-
-    await ctx.reply("✅ Reply sent.");
 
     return;
   }
+
+
+
+  // ADMIN REPLY MODE
+//   if (adminReplyMode.has(senderId)) {
+//     const targetUser = adminReplyMode.get(senderId);
+
+//     adminReplyMode.delete(senderId);
+
+//     await bot.telegram.sendMessage(
+//       targetUser,
+//       `📞 Support Response
+
+// ${ctx.message.text}`
+//     );
+
+//     await ctx.reply("✅ Reply sent.");
+
+//     return;
+//   }
 
   // USER SUPPORT MESSAGE
   const ticket = activeTickets.get(senderId);
@@ -533,38 +566,42 @@ ${ctx.message.text}`
 
   const supportGroupId = process.env.SUPPORT_GROUP_ID;
 
-  await bot.telegram.sendMessage(
-    supportGroupId,
-    `🎫 Ticket #${ticket.ticketId}
+await bot.telegram.sendMessage(
+  process.env.SUPPORT_GROUP_ID,
+  `
+📩 User Reply
+
+Ticket #${ticket.ticketId}
 
 User: ${ctx.from.first_name}
-Username: @${ctx.from.username || "N/A"}
-User ID: ${senderId}
+ID: ${senderId}
 
-Message:
-
-${ctx.message.text}`,
-    {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text:
-                ticket.assignedAdmin
-                  ? "👤 Assigned"
-                  : "Reply",
-              callback_data: `reply_${senderId}`,
-            },
-          ],
+${ctx.message.text}
+`,
+  {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: ticket.assignedAdmin
+              ? "👤 Assigned"
+              : "Reply",
+            callback_data: `reply_${senderId}`,
+          },
         ],
-      },
-    }
-  );
+      ],
+    },
+  }
+);
 
   await ctx.reply(
     "✅ Message sent to support."
   );
+
 });
+
+//detect messsages from the suppport group
+
 
 bot.action(/reply_(.+)/, async (ctx) => {
   const adminId = ctx.from.id;
@@ -593,10 +630,12 @@ bot.action(/reply_(.+)/, async (ctx) => {
   }
 
   ticket.assignedAdmin = adminId;
+  
 
   activeTickets.set(userId, ticket);
+  activeConversations.set(adminId, userId);
 
-  adminReplyMode.set(adminId, userId);
+  // adminReplyMode.set(adminId, userId);
 
   await ctx.editMessageReplyMarkup({
     inline_keyboard: [
@@ -624,6 +663,12 @@ Send your reply.`
 
 bot.action(/close_(.+)/, async (ctx) => {
   const adminId = ctx.from.id;
+  
+  if (ticket.assignedAdmin !== adminId) {
+  return ctx.answerCbQuery(
+    "Only the assigned admin can close this ticket."
+  );
+}
 
   if (!ADMINS.includes(adminId)) {
     return ctx.answerCbQuery("Unauthorized");
@@ -639,6 +684,10 @@ bot.action(/close_(.+)/, async (ctx) => {
     );
   }
 
+  activeConversations.delete(
+  ticket.assignedAdmin
+);
+
   activeTickets.delete(userId);
 
   await bot.telegram.sendMessage(
@@ -650,6 +699,14 @@ If you need further assistance, simply open a new support request.`
 
   await ctx.reply(
     `🔒 Ticket #${ticket.ticketId} closed successfully.`
+  );
+});
+
+bot.command("stopreply", async (ctx) => {
+  activeConversations.delete(ctx.from.id);
+
+  await ctx.reply(
+    "You have exited the current conversation."
   );
 });
 
