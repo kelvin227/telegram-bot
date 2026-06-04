@@ -8,8 +8,7 @@ const token = process.env.BOT_TOKEN;
 
 
 const bot = new Telegraf(token);
-const supportSessions = new Map();
-const awaitingSupportMessage = new Set();
+const activeTickets = new Map();
 const adminReplyMode = new Map();
 
 
@@ -46,6 +45,17 @@ Please choose a category below.`,
     mainMenu(),
   );
 });
+
+bot.command("help", (ctx) => {
+  const helpMessage = `Here are some commands you can use:
+- /start: Start the bot
+- /help: Show this help message
+- /account: Manage your account settings
+- /question: Ask a question about the bot
+`;
+  ctx.reply(helpMessage);
+});
+
 bot.action("main_menu", async (ctx) => {
   await navigate(
     ctx,
@@ -461,93 +471,180 @@ bot.action("data_sharing", async (ctx) => {
 bot.action("support_menu", async (ctx) => {
   const userId = ctx.from.id;
 
-  supportSessions.set(userId, {
-    username: ctx.from.username,
-    startedAt: new Date(),
-  });
+  let ticket = activeTickets.get(userId);
 
-  awaitingSupportMessage.add(userId);
+  if (!ticket) {
+    ticket = {
+      ticketId: Date.now(),
+      status: "open",
+      assignedAdmin: null,
+      createdAt: new Date(),
+    };
+
+    activeTickets.set(userId, ticket);
+  }
 
   await ctx.reply(
-    "Please send your support message. A human agent will respond shortly."
+    `📞 Support ticket opened.
+
+Ticket ID: ${ticket.ticketId}
+
+Please send your message.`
   );
 });
 
 bot.on("text", async (ctx) => {
-  const userId = ctx.from.id;
+  const senderId = ctx.from.id;
 
-  // Admin reply mode
-  if (adminReplyMode.has(userId)) {
-    const targetUser = adminReplyMode.get(userId);
+  // ADMIN REPLY MODE
+  if (adminReplyMode.has(senderId)) {
+    const targetUser = adminReplyMode.get(senderId);
 
-    adminReplyMode.delete(userId);
+    adminReplyMode.delete(senderId);
 
     await bot.telegram.sendMessage(
       targetUser,
-      `📞 Support Response\n\n${ctx.message.text}`
+      `📞 Support Response
+
+${ctx.message.text}`
     );
 
-    await ctx.reply("✅ Response sent successfully.");
+    await ctx.reply("✅ Reply sent.");
 
     return;
   }
 
-  // User support mode
-  if (awaitingSupportMessage.has(userId)) {
-    awaitingSupportMessage.delete(userId);
+  // USER SUPPORT MESSAGE
+  const ticket = activeTickets.get(senderId);
 
-    const supportGroupId = process.env.SUPPORT_GROUP_ID;
+  if (!ticket) {
+    return;
+  }
 
-    await bot.telegram.sendMessage(
-      supportGroupId,
-      `🎫 New Support Ticket
+  if (ticket.status !== "open") {
+    return;
+  }
+
+  const supportGroupId = process.env.SUPPORT_GROUP_ID;
+
+  await bot.telegram.sendMessage(
+    supportGroupId,
+    `🎫 Ticket #${ticket.ticketId}
 
 User: ${ctx.from.first_name}
 Username: @${ctx.from.username || "N/A"}
-User ID: ${userId}
+User ID: ${senderId}
 
 Message:
+
 ${ctx.message.text}`,
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "Reply",
-                callback_data: `reply_${userId}`,
-              },
-            ],
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text:
+                ticket.assignedAdmin
+                  ? "👤 Assigned"
+                  : "Reply",
+              callback_data: `reply_${senderId}`,
+            },
           ],
-        },
-      }
-    );
-
-    await ctx.reply(
-      "✅ Your message has been sent to our support team."
-    );
-  }
-});
-
-bot.action(/reply_(.+)/, async (ctx) => {
-  const userId = ctx.match[1];
-
-  adminReplyMode.set(ctx.from.id, userId);
+        ],
+      },
+    }
+  );
 
   await ctx.reply(
-    `Replying to user ${userId}\n\nSend your response.`
+    "✅ Message sent to support."
   );
 });
 
+bot.action(/reply_(.+)/, async (ctx) => {
+  const adminId = ctx.from.id;
 
+  if (!ADMINS.includes(adminId)) {
+    return ctx.answerCbQuery("Unauthorized");
+  }
 
-bot.command("help", (ctx) => {
-  const helpMessage = `Here are some commands you can use:
-- /start: Start the bot
-- /help: Show this help message
-- /account: Manage your account settings
-- /question: Ask a question about the bot
-`;
-  ctx.reply(helpMessage);
+  const userId = Number(ctx.match[1]);
+
+  const ticket = activeTickets.get(userId);
+
+  if (!ticket) {
+    return ctx.answerCbQuery(
+      "Ticket not found"
+    );
+  }
+
+  if (
+    ticket.assignedAdmin &&
+    ticket.assignedAdmin !== adminId
+  ) {
+    return ctx.answerCbQuery(
+      "Ticket already assigned"
+    );
+  }
+
+  ticket.assignedAdmin = adminId;
+
+  activeTickets.set(userId, ticket);
+
+  adminReplyMode.set(adminId, userId);
+
+  await ctx.editMessageReplyMarkup({
+    inline_keyboard: [
+      [
+        {
+          text: `👤 Assigned to ${ctx.from.first_name}`,
+          callback_data: "assigned",
+        },
+      ],
+      [
+        {
+          text: "🔒 Close Ticket",
+          callback_data: `close_${userId}`,
+        },
+      ],
+    ],
+  });
+
+  await ctx.reply(
+    `You are now handling Ticket #${ticket.ticketId}
+
+Send your reply.`
+  );
+});
+
+bot.action(/close_(.+)/, async (ctx) => {
+  const adminId = ctx.from.id;
+
+  if (!ADMINS.includes(adminId)) {
+    return ctx.answerCbQuery("Unauthorized");
+  }
+
+  const userId = Number(ctx.match[1]);
+
+  const ticket = activeTickets.get(userId);
+
+  if (!ticket) {
+    return ctx.answerCbQuery(
+      "Ticket already closed"
+    );
+  }
+
+  activeTickets.delete(userId);
+
+  await bot.telegram.sendMessage(
+    userId,
+    `✅ Your support ticket #${ticket.ticketId} has been closed.
+
+If you need further assistance, simply open a new support request.`
+  );
+
+  await ctx.reply(
+    `🔒 Ticket #${ticket.ticketId} closed successfully.`
+  );
 });
 
 bot.launch();
