@@ -1,11 +1,12 @@
 const { Telegraf, Markup } = require("telegraf");
 const axios = require("axios");
+const knowledgeBase = require("./knowledge.js");
+const generateAIResponse = require("./ai/airesponder.js");
 require("dotenv").config();
 
 console.log("Starting bot...");
 
 const token = process.env.BOT_TOKEN;
-
 
 const bot = new Telegraf(token);
 const activeTickets = new Map();
@@ -16,6 +17,7 @@ const ADMINS = [
   1261376105,
   // replace with your Telegram user ID
 ];
+
 
 
 async function navigate(ctx, text, keyboard) {
@@ -93,55 +95,31 @@ bot.action("token_menu", async (ctx) => {
 bot.action("bnb_conversion", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(`
-Yes. You must have a small amount of BNB in your wallet to cover blockchain gas fees during the conversion process.
-  `);
+  ctx.reply(knowledgeBase.token.bnb_conversion.answer);
 });
 
 bot.action("missing_vejbc", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(`
-This may happen due to temporary synchronization delays between the wallet and the system.
-✅ Your balance is usually restored or reflected automatically within 24–48 hours.
-⚠️ In some cases, manual proof may be requested by the support team.
-
-  `);
+  ctx.reply(knowledgeBase.token.missing_vejbc.answer);
 });
 
 bot.action("unable_convert", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(`
-Please check the following before trying again:
-Your internet connection is stable
-Your wallet is connected properly
-The tokens you want to send are unlocked
-You have enough BNB for gas fees
-📌 Note: Starting from February, only 10% of tokens unlock monthly.
-
-  `);
+  ctx.reply(knowledgeBase.token.unable_convert.answer);
 });
 
 bot.action("convert_v2", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(`
-        You must use the Vesting System available in the app.
-⚠️ Important Warning:
-Converting to veJBC may lower your Trust Score
-If you cancel a vesting process before completion, all veJBC involved will be permanently lost
-Cancelled vesting transactions cannot be recovered
-Please proceed carefully, as all responsibility belongs to the user.
-    `);
+  ctx.reply(knowledgeBase.token.convert_v2.answer);
 });
 
 bot.action("missing_v2", async (ctx) => {
   await ctx.answerCbQuery();
-  ctx.reply(`JBCV2 distribution has not started yet.
-After starting a vesting process, you must wait until the selected vesting period is completed before claiming your JBCV2 tokens.
 
-    `);
+  ctx.reply(knowledgeBase.token.missing_v2.answer);
 });
 
 //Rewards & Scores Menu
@@ -163,66 +141,31 @@ bot.action("reward_menu", async (ctx) => {
 bot.action("trust_score", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(`
-    What is the Trust Score?
-    The Trust Score measures your loyalty and activity within the JBC ecosystem.
-It is calculated based on:
-Profile completion
-Task participation
-Approved tasks
-Vesting/Staking activity
-DAO participation
-🎁 Users with higher Trust Scores receive better reward percentages.
-
-    `);
+  ctx.reply(knowledgeBase.reward.trust_score.answer);
 });
 
 bot.action("dao_score", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(`What is the DAO Score?
-The DAO Score represents your governance power in the JBC ecosystem.
-It allows users to:
-Vote on ecosystem decisions
-Participate in governance activities
-Influence future system updates
-📈 Higher DAO Scores mean stronger voting influence.`);
+  ctx.reply(knowledgeBase.reward.dao_score.answer);
 });
 
 bot.action("dao_vs_trust", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(`DAO Score vs Trust Score:
-        DAO Score	Trust Score
-Focuses on governance and voting rights	Focuses on rewards and earnings
-Measures ecosystem participation	Measures loyalty and engagement
-✅ Both scores positively affect your ecosystem ranking.
-    `);
+  ctx.reply(knowledgeBase.reward.dao_vs_trust.answer);
 });
 
 bot.action("rewards", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(`What rewards can I earn from tasks?
-Users can earn:
-Airdrops
-USDT
-Other ecosystem rewards
-You can:
-Convert rewards into veJBC
-Withdraw USDT to your wallet
-Receive airdrops automatically
-`);
+  ctx.reply(knowledgeBase.reward.rewards.answer);
 });
 
 bot.action("withdraw", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(`
-        The Withdraw section allows you to transfer your earned USDT rewards to your personal wallet.
-📌 Withdrawal requests are only available on specific dates announced by the platform.
-⚠️ Please ensure you have a compatible wallet connected to receive your rewards.
-    `);
+  ctx.reply(knowledgeBase.reward.withdraw.answer);
 });
 
 //staking & Vesting
@@ -239,68 +182,55 @@ bot.action("staking_menu", async (ctx) => {
       [Markup.button.callback("veJBC vs JBCv2", "veJBC_vs_JBCv2")],
       [Markup.button.callback("Vesting completed", "vesting_completed")],
       [Markup.button.callback("Claiming", "claims")],
-      [
-        Markup.button.callback("⬅ Back", "main_menu")
-      ],
+      [Markup.button.callback("⬅ Back", "main_menu")],
     ]),
   );
 });
 bot.action("staking", async (ctx) => {
   await ctx.answerCbQuery();
-  ctx.reply(
-    `Staking is the process of locking your crypto tokens in a platform or protocol for a specific period in order to earn rewards, incentives, or passive income. Your tokens remain yours, but they are temporarily locked while generating returns.`,
-  );
+  ctx.reply(knowledgeBase.staking.staking.answer);
 });
 
 bot.action("vesting", async (ctx) => {
   await ctx.answerCbQuery();
-  ctx.reply(
-    `Vesting is a system that releases tokens gradually over time instead of giving all tokens immediately. It is commonly used to prevent massive sell-offs and encourage long-term participation.`,
-  );
+  ctx.reply(knowledgeBase.staking.vesting.answer);
 });
 
 bot.action("staking_vs_vesting", async (ctx) => {
   await ctx.answerCbQuery();
-  ctx.reply(`Staking is mainly for earning rewards by locking tokens.
-Vesting is mainly for controlled token distribution over a scheduled period.
-In staking, you lock tokens voluntarily to earn benefits.
-In vesting, tokens are released according to predefined rules or timelines.
-`);
+  ctx.reply(knowledgeBase.staking.staking_vs_vesting.answer);
 });
 
 bot.action("veJBC", async (ctx) => {
   await ctx.answerCbQuery();
   ctx.reply(
-    `You use veJBC for vesting. veJBC usually means “Vested Escrow JBC.” It represents JBC tokens that are locked or vested for a period and may provide governance power, rewards, or ecosystem benefits depending on the platform rules.`,
+    knowledgeBase.staking.veJBC.answer
   );
 });
 
 bot.action("JBCv2", async (ctx) => {
   await ctx.answerCbQuery();
   ctx.reply(
-    `You use JBCv2 for staking, JBCv2 refers to Version 2 of the JBC token or ecosystem upgrade. It may include improvements such as better smart contracts, enhanced utilities, upgraded tokenomics, or migration from an older version. `,
+    knowledgeBase.staking.JBCv2.answer
   );
 });
 
 bot.action("veJBC_vs_JBCv2", async (ctx) => {
   await ctx.answerCbQuery();
-  ctx.reply(`veJBC is a vested/locked representation of JBC used for rewards, governance, or long-term participation.
-JBCv2 is the upgraded version of the actual JBC token or protocol system.
-veJBC focuses on token locking and benefits, while JBCv2 focuses on the upgraded ecosystem/token structure.
-`);
+  ctx.reply(knowledgeBase.staking.veJBC_vs_JBCv2.answer);
 });
 
 bot.action("vesting_completed", async (ctx) => {
   await ctx.answerCbQuery();
   ctx.reply(
-    `Vesting is a system that releases tokens gradually over time instead of giving all tokens immediately. It is commonly used to prevent massive sell-offs and encourage long-term participation.`,
+    knowledgeBase.staking.vesting_completed.answer
   );
 });
 
 bot.action("claims", async (ctx) => {
   await ctx.answerCbQuery();
   ctx.reply(
-    `Vesting is a system that releases tokens gradually over time instead of giving all tokens immediately. It is commonly used to prevent massive sell-offs and encourage long-term participation.`,
+    knowledgeBase.staking.claims.answer
   );
 });
 
@@ -322,42 +252,22 @@ bot.action("wallet_menu", async (ctx) => {
 
 bot.action("wrong_wallet", async (ctx) => {
   await ctx.answerCbQuery();
-  ctx.reply(`I entered the wrong wallet address. How can I fix it?
-You must contact the admin/support team.
-📅 Wallet correction requests are reviewed every Friday.
-⚠️ Important:
-Wallet updates are allowed only once per user
-If rewards or balances already exist, changes may not be approved for security reasons
-`);
+  ctx.reply(knowledgeBase.wallet.wrong_wallet.answer);
 });
 
 bot.action("handshake_error", async (ctx) => {
   await ctx.answerCbQuery();
-  ctx.reply(`What is a HANDSHAKE error and how do I fix it?
-This error usually occurs because of incorrect profile or email formatting.
-✅ Please ensure:
-Your email is entered correctly
-No extra spaces are added
-All fields are completed properly
-`);
+  ctx.reply(knowledgeBase.wallet.handshake_error.answer);
 });
 
 bot.action("contract_wallet", async (ctx) => {
   await ctx.answerCbQuery();
-  ctx.reply(`How can I differentiate between a contract address and BSC wallet address?
-A BSC wallet address belongs to a user and is used for sending/receiving tokens.
-A contract address belongs to a smart contract and controls token operations or decentralized applications.
-Both usually start with “0x”, but you can identify them by checking on BscScan⁠ :
-Wallet addresses show normal wallet activity.
-Contract addresses show “Contract” labels and smart contract details.
-`);
+  ctx.reply(knowledgeBase.wallet.contract_wallet.answer);
 });
 
 bot.action("bsc_address", async (ctx) => {
   await ctx.answerCbQuery();
-  ctx.reply(`Why is BNB Smart Chain address requested for registration instead of JBC wallet address?
-Because JBC operates on the BNB Smart Chain network, rewards and transactions are distributed through a compatible BSC wallet address. The BSC address ensures proper receipt of tokens, rewards, and ecosystem interactions.
-`);
+  ctx.reply(knowledgeBase.wallet.bsc_address.answer);
 });
 
 bot.action(`rewards_not_received`, async (ctx) => {
@@ -388,9 +298,7 @@ bot.action(`ios_app`, async (ctx) => {
   await ctx.answerCbQuery();
 
   ctx.reply(
-    `Yes, the iOS app is currently under approval and will be available soon.
-🍎 Until release, iPhone users can continue using the platform smoothly through the Safari browser or joining the ios test group.
-`,
+    knowledgeBase.app.ios_app.answer,
     Markup.inlineKeyboard([
       [
         Markup.button.url(
@@ -446,31 +354,37 @@ bot.action("privacy_menu", async (ctx) => {
 bot.action("data_retention", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(`To avoid any issues or errors after an account deletion request, we give the user 7 business days. the deletion process will then be completed and all data will be permanently deleted after this period.`);
+  ctx.reply(knowledgeBase.privacy.data_retention.answer);
 });
 
 bot.action("data_retention_details", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(`All personal information, including phone numbers, emails, device data, and wallet information, is permanently deleted after the 7-day retention period following an account deletion request. No user data is retained beyond this period.`);
+  ctx.reply(knowledgeBase.privacy.data_retention_details.answer);
 });
 
 bot.action("account_deletion_permanent", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(`Yes, account deletion is permanent. Once the 7-day retention period is over and the account is deleted, all user data is permanently removed from our systems and cannot be recovered.`);
+  ctx.reply(
+    knowledgeBase.privacy.account_deletion_permanent.answer,
+  );
 });
 
 bot.action("full_data_removal", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(`Yes, users can request full removal of their personal data by submitting an account deletion request throught telegram or by contacting our support team directly. Once the request is processed, all personal data will be permanently deleted after the 7-day retention period.`);
+  ctx.reply(
+    knowledgeBase.privacy.full_data_removal.answer,
+  );
 });
 
 bot.action("data_sharing", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(`This information is used solely for notification purposes and account verification purposes. it is not shared with anyone else.`);
+  ctx.reply(
+    knowledgeBase.privacy.data_sharing.answer,
+  );
 });
 
 //Support Menu
@@ -478,12 +392,11 @@ bot.action("support_menu", async (ctx) => {
   const userId = ctx.from.id;
 
   let ticket = activeTickets.get(userId);
-    const existingTicket =
-    activeTickets.get(userId);
+  const existingTicket = activeTickets.get(userId);
 
   if (existingTicket) {
     return ctx.reply(
-      `You already have an open ticket (#${existingTicket.ticketId}). Please continue chatting here.`
+      `You already have an open ticket (#${existingTicket.ticketId}). Please continue chatting here.`,
     );
   }
 
@@ -503,72 +416,44 @@ bot.action("support_menu", async (ctx) => {
 
 Ticket ID: ${ticket.ticketId}
 
-Please send your message.`
+Please send your message.`,
   );
 });
 
 bot.on("text", async (ctx) => {
-    const senderId = ctx.from.id;
+  const senderId = ctx.from.id;
+  const message = ctx.message.text;
 
-  
-  ///admin setup
+  // ==========================================
+  // 1. ADMIN → USER SUPPORT MESSAGE
+  // ==========================================
 
-  const supportGroupId2 = Number(
-    process.env.SUPPORT_GROUP_ID
-  );
+  if (ADMINS.includes(senderId)) {
+    if (activeConversations.has(senderId)) {
+      const targetUser = activeConversations.get(senderId);
 
-  if (
-    ctx.chat.id === supportGroupId2 &&
-    ADMINS.includes(senderId) &&
-    activeConversations.has(senderId)
-  ) {
-    const targetUser =
-      activeConversations.get(senderId);
+      await bot.telegram.sendMessage(
+        targetUser,
+        `📞 Support\n\n${message}`
+      );
 
-    await bot.telegram.sendMessage(
-      targetUser,
-      `📞 Support\n\n${ctx.message.text}`
-    );
-
-    return;
+      await ctx.reply("✅ Reply sent.");
+      return;
+    }
   }
 
+  // ==========================================
+  // 2. USER → HUMAN SUPPORT
+  // ==========================================
 
-
-  // ADMIN REPLY MODE
-//   if (adminReplyMode.has(senderId)) {
-//     const targetUser = adminReplyMode.get(senderId);
-
-//     adminReplyMode.delete(senderId);
-
-//     await bot.telegram.sendMessage(
-//       targetUser,
-//       `📞 Support Response
-
-// ${ctx.message.text}`
-//     );
-
-//     await ctx.reply("✅ Reply sent.");
-
-//     return;
-//   }
-
-  // USER SUPPORT MESSAGE
   const ticket = activeTickets.get(senderId);
 
-  if (!ticket) {
-    return;
-  }
+  if (ticket && ticket.status === "open") {
+    const supportGroupId = process.env.SUPPORT_GROUP_ID;
 
-  if (ticket.status !== "open") {
-    return;
-  }
-
-  const supportGroupId = process.env.SUPPORT_GROUP_ID;
-
-await bot.telegram.sendMessage(
-  process.env.SUPPORT_GROUP_ID,
-  `
+    await bot.telegram.sendMessage(
+      supportGroupId,
+      `
 📩 User Reply
 
 Ticket #${ticket.ticketId}
@@ -576,32 +461,51 @@ Ticket #${ticket.ticketId}
 User: ${ctx.from.first_name}
 ID: ${senderId}
 
-${ctx.message.text}
+${message}
 `,
-  {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: ticket.assignedAdmin
-              ? "👤 Assigned"
-              : "Reply",
-            callback_data: `reply_${senderId}`,
-          },
-        ],
-      ],
-    },
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: ticket.assignedAdmin
+                  ? "👤 Assigned"
+                  : "Reply",
+                callback_data: `reply_${senderId}`,
+              },
+            ],
+          ],
+        },
+      }
+    );
+
+    await ctx.reply("✅ Message sent to support.");
+
+    return;
   }
-);
 
-  await ctx.reply(
-    "✅ Message sent to support."
-  );
+  // ==========================================
+  // 3. AI SUPPORT
+  // ==========================================
 
+  try {
+    // Tell the user we're processing the question
+    await ctx.sendChatAction("typing");
+
+    const result = await generateAIResponse(message);
+
+    await ctx.reply(result.answer);
+
+  } catch (error) {
+    console.error("AI handler error:", error);
+
+    await ctx.reply(
+      "Sorry, I couldn't process your question right now. Please try again or contact human support."
+    );
+  }
 });
 
 //detect messsages from the suppport group
-
 
 bot.action(/reply_(.+)/, async (ctx) => {
   const adminId = ctx.from.id;
@@ -615,22 +519,14 @@ bot.action(/reply_(.+)/, async (ctx) => {
   const ticket = activeTickets.get(userId);
 
   if (!ticket) {
-    return ctx.answerCbQuery(
-      "Ticket not found"
-    );
+    return ctx.answerCbQuery("Ticket not found");
   }
 
-  if (
-    ticket.assignedAdmin &&
-    ticket.assignedAdmin !== adminId
-  ) {
-    return ctx.answerCbQuery(
-      "Ticket already assigned"
-    );
+  if (ticket.assignedAdmin && ticket.assignedAdmin !== adminId) {
+    return ctx.answerCbQuery("Ticket already assigned");
   }
 
   ticket.assignedAdmin = adminId;
-  
 
   activeTickets.set(userId, ticket);
   activeConversations.set(adminId, userId);
@@ -657,18 +553,16 @@ bot.action(/reply_(.+)/, async (ctx) => {
   await ctx.reply(
     `You are now handling Ticket #${ticket.ticketId}
 
-Send your reply.`
+Send your reply.`,
   );
 });
 
 bot.action(/close_(.+)/, async (ctx) => {
   const adminId = ctx.from.id;
-  
+
   if (ticket.assignedAdmin !== adminId) {
-  return ctx.answerCbQuery(
-    "Only the assigned admin can close this ticket."
-  );
-}
+    return ctx.answerCbQuery("Only the assigned admin can close this ticket.");
+  }
 
   if (!ADMINS.includes(adminId)) {
     return ctx.answerCbQuery("Unauthorized");
@@ -679,14 +573,10 @@ bot.action(/close_(.+)/, async (ctx) => {
   const ticket = activeTickets.get(userId);
 
   if (!ticket) {
-    return ctx.answerCbQuery(
-      "Ticket already closed"
-    );
+    return ctx.answerCbQuery("Ticket already closed");
   }
 
-  activeConversations.delete(
-  ticket.assignedAdmin
-);
+  activeConversations.delete(ticket.assignedAdmin);
 
   activeTickets.delete(userId);
 
@@ -694,20 +584,16 @@ bot.action(/close_(.+)/, async (ctx) => {
     userId,
     `✅ Your support ticket #${ticket.ticketId} has been closed.
 
-If you need further assistance, simply open a new support request.`
+If you need further assistance, simply open a new support request.`,
   );
 
-  await ctx.reply(
-    `🔒 Ticket #${ticket.ticketId} closed successfully.`
-  );
+  await ctx.reply(`🔒 Ticket #${ticket.ticketId} closed successfully.`);
 });
 
 bot.command("stopreply", async (ctx) => {
   activeConversations.delete(ctx.from.id);
 
-  await ctx.reply(
-    "You have exited the current conversation."
-  );
+  await ctx.reply("You have exited the current conversation.");
 });
 
 bot.launch();

@@ -1,0 +1,52 @@
+start bot with node.js
+when ever the bot is turned off and a user sends a message it just qeues up until the bot is turned back on when the bot is turned back on it then sends the message to the and does this
+Unhandled error while processing {
+  update_id: 711510095,
+  callback_query: {
+    id: '1469470412653720916',
+    from: {
+      id: 6784588686,
+      is_bot: false,
+      first_name: 'Adelasola David',
+      username: 'Adelasola_David',
+      language_code: 'en'
+    },
+    message: {
+      message_id: 507,
+      from: [Object],
+      chat: [Object],
+      date: 1784028314,
+      edit_date: 1784028400,
+      text: 'Welcome to JBC Support Bot 🚀\n\nChoose a category below:',
+      reply_markup: [Object]
+    },
+    chat_instance: '-7965677256557057875',
+    data: 'token_menu'
+  }
+}
+C:\Users\trust\Documents\telegram-bot\node_modules\telegraf\lib\core\network\client.js:315
+            throw new error_1.default(data, { method, payload });
+                  ^
+
+TelegramError: 400: Bad Request: query is too old and response timeout expired or query ID is invalid
+    at Telegram.callApi (C:\Users\trust\Documents\telegram-bot\node_modules\telegraf\lib\core\network\client.js:315:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async navigate (C:\Users\trust\Documents\telegram-bot\bot.js:22:3)
+    at async C:\Users\trust\Documents\telegram-bot\bot.js:74:3
+    at async execute (C:\Users\trust\Documents\telegram-bot\node_modules\telegraf\lib\composer.js:518:17)
+    at async C:\Users\trust\Documents\telegram-bot\node_modules\telegraf\lib\composer.js:519:21
+    at async execute (C:\Users\trust\Documents\telegram-bot\node_modules\telegraf\lib\composer.js:518:17)
+    at async C:\Users\trust\Documents\telegram-bot\node_modules\telegraf\lib\composer.js:519:21
+    at async execute (C:\Users\trust\Documents\telegram-bot\node_modules\telegraf\lib\composer.js:518:17)
+    at async C:\Users\trust\Documents\telegram-bot\node_modules\telegraf\lib\composer.js:519:21 {
+  response: {
+    ok: false,
+    error_code: 400,
+    description: 'Bad Request: query is too old and response timeout expired or query ID is invalid'
+  },
+  on: {
+    method: 'answerCallbackQuery',
+    payload: { text: undefined, callback_query_id: '1469470412653720916' }
+  }
+}
+ then turns the bot back off like a crash or something
