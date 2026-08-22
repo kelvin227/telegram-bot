@@ -398,7 +398,7 @@ bot.on("text", async (ctx) => {
   const senderId = ctx.from.id;
   const message = ctx.message.text;
   const chatType = ctx.chat.type;
-  const chatId = ctx.chat.id;
+  const chatId = ctx.message.message_thread_id;
   const userLang = ctx.from.language_code || "en";
 
   console.log(chatId);
@@ -414,7 +414,6 @@ bot.on("text", async (ctx) => {
 
   if (isGroup) {
     const botUsername = ctx.botInfo.username;
-
     // ------------------------------------------
     // CHECK 1: Is the bot mentioned?
     // ------------------------------------------
@@ -510,7 +509,7 @@ app.use(express.json());
 
 app.use("/api", broadcastRoute(bot)); // pass the same bot instance so it can send messages
 
-const PORT = process.env.PORT || 3025;
+const PORT = process.env.PORT || 3232;
 app.listen(PORT, () => {
   console.log(`API server running on port ${PORT}`);
 });

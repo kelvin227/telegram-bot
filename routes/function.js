@@ -3,7 +3,29 @@ const rateLimit = require("express-rate-limit");
 const router = express.Router();
 require("dotenv").config();
 
-const group = [-5079156156, /* ... rest of your group chat IDs */];
+const group = [
+  {chatId: -1002552597707, name: "JBC ARMY", topics: [
+      { threadId: 3641, name: "RAIDS" },
+      { threadId: 3583, name: "TURKEY GROUP" },
+      { threadId: 14583, name: "INDONESIAN GROUP" },
+      { threadId: 3587, name: "SPANISH GROUP" },
+      { threadId: 3656, name: "INDIAN GROUP" },
+      { threadId: 9736, name: "NIGERIA GROUP" },
+      { threadId: 218196, name: "CHINESE GROUP" },
+      { threadId: 337486, name: "KYRGYZSTAN GROUP" },
+      { threadId: 102043, name: "IRAN PERSIAN GROUP" },
+      { threadId: 3588, name: "PORTUGUESE BRAZIL GROUP" },
+      { threadId: 3586, name: "FRENCH GROUP" },
+      { threadId: 218201, name: "VIETNAMESE GROUP" },
+      { threadId: 95591, name: "PHILIPPINE GROUP" },
+            { threadId: 41291, name: "BANGLADESH GROUP" },
+      { threadId: 3585, name: "RUSSIAN GROUP" },
+      { threadId: 119028, name: "GHANA GROUP" },
+      { threadId: 604059, name: "ITALIAN GROUP" },
+      { threadId: 116665, name: "KOREA GROUP" },
+
+    ]},
+   /* ... rest of your group chat IDs */];
 
 const API_KEY = process.env.BROADCAST_API_KEY; // set this in your .env
 
@@ -66,21 +88,24 @@ module.exports = function (bot) {
 
     const results = { sent: [], failed: [] };
 
-    for (const chatId of group) {
-      try {
-        await bot.telegram.sendMessage(chatId, text);
-        results.sent.push(chatId);
-      } catch (error) {
-        console.error(
-          `Broadcast failed for ${chatId}:`,
-          error.response?.description || error.message
-        );
-        results.failed.push({ chatId, error: error.response?.description || error.message });
-      }
+for (const { chatId, name, topics } of group) {
+  const targets = topics && topics.length > 0 ? topics : [{ threadId: null, name: "main" }];
 
-      // Layer 2: Telegram caps ~30 messages/sec globally — this keeps you under that.
-      await sleep(50);
+  for (const { threadId, name: topicName } of targets) {
+    try {
+      const options = threadId ? { message_thread_id: threadId } : {};
+      await bot.telegram.sendMessage(chatId, text, options);
+      results.sent.push({ chatId, name, topic: topicName });
+    } catch (error) {
+      console.error(
+        `Broadcast failed for ${name} → ${topicName} (${chatId}):`,
+        error.response?.description || error.message
+      );
+      results.failed.push({ chatId, name, topic: topicName, error: error.response?.description || error.message });
     }
+    await sleep(50);
+  }
+}
 
     console.log(`Broadcast complete: ${results.sent.length} sent, ${results.failed.length} failed.`);
     if (results.failed.length) console.log("Failed chat IDs:", results.failed);
