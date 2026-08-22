@@ -4,31 +4,32 @@ const knowledgeBase = {
 
     bnb_conversion: {
       question: "Do I need BNB for conversion?",
-      keywords: [
-        "bnb",
-        "gas",
-        "conversion",
-        "convert",
-        "fee",
-      ],
-      answer: `Yes. You must have a small amount of BNB in your wallet to cover blockchain gas fees during the conversion process.`,
+      keywords: ["bnb", "gas", "conversion", "convert", "fee"],
+      answer: `Yes. You need a small amount of BNB in your wallet to pay for gas fees when performing transactions on the BNB Smart Chain (BEP-20) network.
+
+⚠️ Make sure your wallet has enough BNB before starting the conversion. A zero BNB balance may prevent the transaction from being completed.`,
     },
-
-    missing_vejbc: {
-      question: "OLDJBC deducted but no veJBC",
+    unable_convert: {
+      question: "Unable to convert OLDJBC",
       keywords: [
-        "oldjbc deducted",
-        "oldjbc missing",
-        "missing vejbc",
-        "no vejbc",
-        "vejbc not received",
-        "conversion deducted",
+        "cannot convert",
+        "can't convert",
+        "unable to convert",
+        "conversion failed",
+        "oldjbc conversion",
       ],
-      answer: `This may happen due to temporary synchronization delays between the wallet and the system.
+      answer: `If you are unable to convert OLDJBC, check the following:
 
-✅ Your balance is usually restored or reflected automatically within 24–48 hours.
+1. 🌐 Make sure your internet connection is stable.
+2. 👛 Make sure your wallet is connected properly.
+3. 🔓 Make sure the tokens you want to convert are unlocked.
+4. ⛽ Make sure your wallet has enough BNB to cover the gas fees.
 
-⚠️ In some cases, manual proof may be requested by the support team.`,
+⚠️ IMPORTANT: Starting from February, only 10% of tokens unlock monthly.
+
+If the problem continues after checking these requirements, please contact our support team.
+
+[SUPPORT PLACEHOLDER — add the appropriate support instructions here later.]`,
     },
 
     unable_convert: {
@@ -60,15 +61,18 @@ const knowledgeBase = {
       ],
       answer: `You must use the Vesting System available in the app.
 
-⚠️ Important Warning:
+⚠️ Important:
 
+🔸 **Trust Score**
 Converting to veJBC may lower your Trust Score.
 
-If you cancel a vesting process before completion, all veJBC involved will be permanently lost.
+🔸 **Vesting Cancellation**
+If you cancel a vesting process before it is completed, **all veJBC involved will be permanently lost.**
 
-Cancelled vesting transactions cannot be recovered.
+🔸 **No Recovery**
+Cancelled vesting transactions **cannot be recovered.**
 
-Please proceed carefully, as all responsibility belongs to the user.`,
+❗ Please review the vesting details carefully before proceeding.`,
     },
 
     missing_v2: {
@@ -82,7 +86,11 @@ Please proceed carefully, as all responsibility belongs to the user.`,
       ],
       answer: `JBCV2 distribution has not started yet.
 
-After starting a vesting process, you must wait until the selected vesting period is completed before claiming your JBCV2 tokens.`,
+After starting a vesting process, your JBCV2 tokens will only become claimable **after the selected vesting duration has been completed.**
+
+⏳ Please wait until your chosen vesting period ends before attempting to claim your JBCV2.
+
+[SUPPORT PLACEHOLDER — add the appropriate support instructions here later.]`,
     },
   },
 
@@ -91,12 +99,7 @@ After starting a vesting process, you must wait until the selected vesting perio
 
     trust_score: {
       question: "What is the Trust Score?",
-      keywords: [
-        "trust score",
-        "trust",
-        "loyalty score",
-        "reward score",
-      ],
+      keywords: ["trust score", "trust", "loyalty score", "reward score"],
       answer: `The Trust Score measures your loyalty and activity within the JBC ecosystem.
 
 It is calculated based on:
@@ -112,12 +115,7 @@ It is calculated based on:
 
     dao_score: {
       question: "What is the DAO Score?",
-      keywords: [
-        "dao score",
-        "dao",
-        "governance score",
-        "voting score",
-      ],
+      keywords: ["dao score", "dao", "governance score", "voting score"],
       answer: `The DAO Score represents your governance power in the JBC ecosystem.
 
 It allows users to:
@@ -200,10 +198,24 @@ You can:
         "stake",
         "staked",
         "how does staking work",
+        "jbc staking",
+        "staking jbc",
+        "lock jbc",
       ],
-      answer: `Staking is the process of locking your crypto tokens in a platform or protocol for a specific period in order to earn rewards, incentives, or passive income.
+      answer: `JBC staking is part of the ecosystem's migration and rewards system.
 
-Your tokens remain yours, but they are temporarily locked while generating returns.`,
+Our platform is currently transitioning from the older smart contract. Users can deposit their old tokens into the migration/staking smart contract and lock them for a selected period.
+
+🔒 Available lock periods:
+• 3 months — 10% yield
+• 6 months — 18% yield
+• 1 year — 40% yield
+• 2 years — 65% yield
+• 3 years — 90% yield
+
+During the selected lock period, users participate in the ecosystem's staking mechanism and receive ecosystem rewards points and the upgraded tokens according to the platform's distribution rules.
+
+⚠️ The selected lock period determines the applicable yield, so users should carefully review the available options before starting a staking process.`,
     },
 
     vesting: {
@@ -213,10 +225,33 @@ Your tokens remain yours, but they are temporarily locked while generating retur
         "vest",
         "vested",
         "how does vesting work",
+        "jbc vesting",
+        "vesting jbc",
+        "token vesting",
+        "vesting period",
       ],
-      answer: `Vesting is a system that releases tokens gradually over time instead of giving all tokens immediately.
+      answer: `Vesting is the mechanism used by the JBC ecosystem to control when upgraded tokens become available to the user.
 
-It is commonly used to prevent massive sell-offs and encourage long-term participation.`,
+In the current JBC transition, users interact with the migration/staking system by depositing their older tokens into the designated smart contract. The user then selects a lock period.
+
+🔒 Available lock periods:
+• 3 months — 10% yield
+• 6 months — 18% yield
+• 1 year — 40% yield
+• 2 years — 65% yield
+• 3 years — 90% yield
+
+⏳ The selected period is time-locked. Users must wait until the selected vesting/lock duration has been completed before the corresponding tokens become claimable according to the platform's distribution rules.
+
+🏆 During this process, users can receive ecosystem rewards points and participate in the distribution of the upgraded JBCv2 tokens.
+
+Important distinction:
+
+• JBC is the active cryptocurrency.
+• veJBC is an internal virtual counter used by the application to track loyalty and distribution schedules.
+• JBCv2 is the upgraded cryptocurrency token.
+
+⚠️ Before starting a vesting process, users should carefully check the selected duration and associated yield because the selected lock period determines the applicable staking terms.`,
     },
 
     staking_vs_vesting: {
@@ -226,14 +261,28 @@ It is commonly used to prevent massive sell-offs and encourage long-term partici
         "difference staking vesting",
         "staking and vesting",
         "difference between staking and vesting",
+        "staking or vesting",
       ],
-      answer: `Staking is mainly for earning rewards by locking tokens.
+      answer: `Staking and vesting are related to the JBC ecosystem's migration and token distribution process, but they describe different aspects of the system.
 
-Vesting is mainly for controlled token distribution over a scheduled period.
+🔒 STAKING
+• Users deposit older tokens into the migration/staking smart contract.
+• Users select a predefined lock period.
+• Available periods are 3 months, 6 months, 1 year, 2 years, and 3 years.
+• The corresponding yields are 10%, 18%, 40%, 65%, and 90%.
+• Users participate in the ecosystem rewards and upgraded token distribution mechanism.
 
-In staking, you lock tokens voluntarily to earn benefits.
+⏳ VESTING
+• Vesting determines when the corresponding upgraded tokens become available to the user.
+• The selected duration is time-locked.
+• Users must wait until the selected period is completed before claiming tokens according to the platform's distribution rules.
 
-In vesting, tokens are released according to predefined rules or timelines.`,
+💡 In simple terms:
+Staking is the process of depositing and locking tokens through the migration/staking mechanism.
+
+Vesting refers to the time-based release and claimability of the upgraded tokens.
+
+⚠️ veJBC is separate from both concepts. It is an internal, off-chain virtual counter used by the application for loyalty and distribution calculations.`,
     },
 
     veJBC: {
@@ -242,11 +291,26 @@ In vesting, tokens are released according to predefined rules or timelines.`,
         "vejbc",
         "what is vejbc",
         "vested jbc",
-        "vested escrow jbc",
+        "ve jbc",
+        "vejbc token",
+        "vejbc cryptocurrency",
+        "vejbc value",
       ],
-      answer: `You use veJBC for vesting.
+      answer: `veJBC is a virtual, off-chain loyalty and distribution counter used inside the JBC application.
 
-veJBC usually means “Vested Escrow JBC.” It represents JBC tokens that are locked or vested for a period and may provide governance power, rewards, or ecosystem benefits depending on the platform rules.`,
+⚠️ Important: veJBC is NOT a cryptocurrency.
+
+veJBC:
+• Exists only inside the application database.
+• Is not recorded as a cryptocurrency on the blockchain.
+• Cannot be transferred between wallets.
+• Cannot be traded or sold on an exchange.
+• Has no independent market value or financial value.
+• Has no independent market pairs.
+
+The application uses veJBC as a non-financial virtual counter to calculate user loyalty and help determine distribution schedules within the ecosystem.
+
+💡 JBC is the active cryptocurrency. veJBC should not be treated as a separate tradable cryptocurrency or financial asset.`,
     },
 
     JBCv2: {
@@ -254,12 +318,30 @@ veJBC usually means “Vested Escrow JBC.” It represents JBC tokens that are l
       keywords: [
         "jbcv2",
         "jbc v2",
+        "jbc version 2",
         "version 2",
         "new jbc",
+        "upgraded jbc",
+        "jbcv2 token",
+        "jbcv2 contract",
       ],
-      answer: `JBCv2 refers to Version 2 of the JBC token or ecosystem upgrade.
+      answer: `JBCv2 is the upgraded JBC cryptocurrency token used as part of the ecosystem's transition from the older smart contract.
 
-It may include improvements such as better smart contracts, enhanced utilities, upgraded tokenomics, or migration from an older version.`,
+The JBC platform currently provides a migration/staking mechanism where users can deposit their older tokens into the designated smart contract and participate in a time-locked staking process.
+
+🔒 Available lock periods:
+• 3 months — 10% yield
+• 6 months — 18% yield
+• 1 year — 40% yield
+• 2 years — 65% yield
+• 3 years — 90% yield
+
+Users receive ecosystem rewards points and the upgraded tokens according to the applicable distribution rules and selected lock period.
+
+📋 JBCv2 Contract Address:
+0x73cb7463fB02eF2bA258286356E2F45f250F85C9
+
+⚠️ Always verify that you are interacting with the official JBCv2 contract address before performing a blockchain transaction.`,
     },
 
     veJBC_vs_JBCv2: {
@@ -268,12 +350,38 @@ It may include improvements such as better smart contracts, enhanced utilities, 
         "vejbc vs jbcv2",
         "difference vejbc jbcv2",
         "vejbc and jbcv2",
+        "difference between vejbc and jbcv2",
+        "is vejbc a token",
+        "is vejbc cryptocurrency",
+        "jbcv2 vs vejbc",
       ],
-      answer: `veJBC is a vested/locked representation of JBC used for rewards, governance, or long-term participation.
+      answer: `veJBC and JBCv2 are fundamentally different.
 
-JBCv2 is the upgraded version of the actual JBC token or protocol system.
+🟣 veJBC
+• veJBC is NOT a cryptocurrency.
+• It is a virtual, off-chain counter maintained inside the JBC application.
+• It is used to track user loyalty and help calculate distribution schedules.
+• It does not exist as a tradable cryptocurrency on the blockchain.
+• It cannot be transferred or traded.
+• It has no independent market value or financial value.
+• It has no independent exchange market pair.
 
-veJBC focuses on token locking and benefits, while JBCv2 focuses on the upgraded ecosystem/token structure.`,
+🟢 JBCv2
+• JBCv2 is the upgraded JBC cryptocurrency.
+• It is part of the ecosystem's transition from the older smart contract.
+• It is associated with the migration/staking mechanism used by the platform.
+• Users can participate in the time-locked migration/staking process to receive the upgraded tokens according to the applicable distribution rules.
+
+📋 JBCv2 Contract Address:
+0x73cb7463fB02eF2bA258286356E2F45f250F85C9
+
+🔑 The simplest way to remember the difference:
+
+veJBC = internal application counter for loyalty and distribution calculations.
+
+JBCv2 = actual upgraded JBC cryptocurrency.
+
+⚠️ Do not treat veJBC as a tradable cryptocurrency or attempt to look for veJBC exchange pairs.`,
     },
 
     vesting_completed: {
@@ -291,12 +399,7 @@ It is commonly used to prevent massive sell-offs and encourage long-term partici
 
     claims: {
       question: "Claiming",
-      keywords: [
-        "claim",
-        "claiming",
-        "claim tokens",
-        "claim jbc",
-      ],
+      keywords: ["claim", "claiming", "claim tokens", "claim jbc"],
       answer: `Vesting is a system that releases tokens gradually over time instead of giving all tokens immediately.
 
 It is commonly used to prevent massive sell-offs and encourage long-term participation.`,
@@ -401,13 +504,7 @@ You should verify your wallet address, check the task status, and contact the pr
 
     ios_app: {
       question: "Is the iOS app available?",
-      keywords: [
-        "ios",
-        "iphone app",
-        "ios app",
-        "apple app",
-        "testflight",
-      ],
+      keywords: ["ios", "iphone app", "ios app", "apple app", "testflight"],
       answer: `Yes, the iOS app is currently under approval and will be available soon.
 
 🍎 Until release, iPhone users can continue using the platform smoothly through the Safari browser or joining the iOS test group.`,

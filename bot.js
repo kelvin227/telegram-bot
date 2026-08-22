@@ -1,6 +1,9 @@
+const express = require("express");
+const broadcastRoute = require("./routes/function.js");
 const { Telegraf, Markup } = require("telegraf");
 const axios = require("axios");
 const knowledgeBase = require("./knowledge.js");
+const translateText = require("./ai/translate.js");
 const generateAIResponse = require("./ai/airesponder.js");
 require("dotenv").config();
 
@@ -9,14 +12,7 @@ console.log("Starting bot...");
 const token = process.env.BOT_TOKEN;
 
 const bot = new Telegraf(token);
-const activeTickets = new Map();
-const adminReplyMode = new Map();
-const activeConversations = new Map();
-
-const ADMINS = [
-  1261376105,
-  // replace with your Telegram user ID
-];
+const userLanguages = new Map();
 
 
 
@@ -39,6 +35,17 @@ function mainMenu() {
     [Markup.button.callback("📞 Contact Support", "support_menu")],
   ]);
 }
+function languageMenu() {
+  return Markup.inlineKeyboard([
+    [
+      Markup.button.callback("🇬🇧 English", "lang_en"),
+      Markup.button.callback("🇪🇸 Español", "lang_es"),
+    ],
+    [
+      Markup.button.callback("🇫🇷 Français", "lang_fr"),
+    ],
+  ]);
+}
 
 bot.start((ctx) => {
   const firstname = ctx.message.chat.first_name;
@@ -49,8 +56,8 @@ bot.start((ctx) => {
 
 Welcome to JBC Support Bot.
 
-Please choose a category below.`,
-    mainMenu(),
+Please choose a select your language preferred below.`,
+    languageMenu(),
   );
 });
 
@@ -387,117 +394,103 @@ bot.action("data_sharing", async (ctx) => {
   );
 });
 
-//Support Menu
-bot.action("support_menu", async (ctx) => {
-  const userId = ctx.from.id;
-
-  let ticket = activeTickets.get(userId);
-  const existingTicket = activeTickets.get(userId);
-
-  if (existingTicket) {
-    return ctx.reply(
-      `You already have an open ticket (#${existingTicket.ticketId}). Please continue chatting here.`,
-    );
-  }
-
-  if (!ticket) {
-    ticket = {
-      ticketId: Date.now(),
-      status: "open",
-      assignedAdmin: null,
-      createdAt: new Date(),
-    };
-
-    activeTickets.set(userId, ticket);
-  }
-
-  await ctx.reply(
-    `📞 Support ticket opened.
-
-Ticket ID: ${ticket.ticketId}
-
-Please send your message.`,
-  );
-});
-
 bot.on("text", async (ctx) => {
   const senderId = ctx.from.id;
   const message = ctx.message.text;
+  const chatType = ctx.chat.type;
+  const chatId = ctx.chat.id;
+  const userLang = ctx.from.language_code || "en";
+
+  console.log(chatId);
+
+  console.log("Chat type:", chatType);
 
   // ==========================================
-  // 1. ADMIN → USER SUPPORT MESSAGE
+  // 1. CHECK IF THIS IS A GROUP
   // ==========================================
+  const isGroup =
+    chatType === "group" ||
+    chatType === "supergroup";
 
-  if (ADMINS.includes(senderId)) {
-    if (activeConversations.has(senderId)) {
-      const targetUser = activeConversations.get(senderId);
+  if (isGroup) {
+    const botUsername = ctx.botInfo.username;
 
-      await bot.telegram.sendMessage(
-        targetUser,
-        `📞 Support\n\n${message}`
+    // ------------------------------------------
+    // CHECK 1: Is the bot mentioned?
+    // ------------------------------------------
+    const isMentioned = message.includes(
+      `@${botUsername}`
+    );
+
+    // ------------------------------------------
+    // CHECK 2: Is the user replying to the bot?
+    // ------------------------------------------
+    const isReplyToBot =
+      ctx.message.reply_to_message &&
+      ctx.message.reply_to_message.from &&
+      ctx.message.reply_to_message.from.id ===
+        ctx.botInfo.id;
+
+    // Ignore normal group conversations
+    if (!isMentioned && !isReplyToBot) {
+      return;
+    }
+
+    // ------------------------------------------
+    // REMOVE BOT MENTION
+    // ------------------------------------------
+    const userMessage = isMentioned
+      ? message.replace(
+          new RegExp(`@${botUsername}`, "gi"),
+          ""
+        ).trim()
+      : message.trim();
+
+    // User mentioned the bot but didn't ask anything
+    if (!userMessage) {
+      return ctx.reply(
+        "👋 How can I help you?"
+      );
+    }
+
+    try {
+      await ctx.sendChatAction("typing");
+
+      const result =
+        await generateAIResponse(userMessage);
+
+      return ctx.reply(result.answer);
+    } catch (error) {
+      console.error(
+        "AI group handler error:",
+        error
       );
 
-      await ctx.reply("✅ Reply sent.");
-      return;
+      return ctx.reply(
+        "Sorry, I couldn't process your question right now. Please try again."
+      );
     }
   }
 
   // ==========================================
-  // 2. USER → HUMAN SUPPORT
+  // 2. PRIVATE CHAT AI SUPPORT
   // ==========================================
-
-  const ticket = activeTickets.get(senderId);
-
-  if (ticket && ticket.status === "open") {
-    const supportGroupId = process.env.SUPPORT_GROUP_ID;
-
-    await bot.telegram.sendMessage(
-      supportGroupId,
-      `
-📩 User Reply
-
-Ticket #${ticket.ticketId}
-
-User: ${ctx.from.first_name}
-ID: ${senderId}
-
-${message}
-`,
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: ticket.assignedAdmin
-                  ? "👤 Assigned"
-                  : "Reply",
-                callback_data: `reply_${senderId}`,
-              },
-            ],
-          ],
-        },
-      }
-    );
-
-    await ctx.reply("✅ Message sent to support.");
-
-    return;
-  }
-
-  // ==========================================
-  // 3. AI SUPPORT
-  // ==========================================
-
   try {
-    // Tell the user we're processing the question
     await ctx.sendChatAction("typing");
+        const result =
+      await generateAIResponse(message);
+      let reply = result.answer;
 
-    const result = await generateAIResponse(message);
 
-    await ctx.reply(result.answer);
+        await ctx.reply(reply);
+
+
 
   } catch (error) {
-    console.error("AI handler error:", error);
+    console.error(
+      "AI handler error:",
+      error
+    );
 
     await ctx.reply(
       "Sorry, I couldn't process your question right now. Please try again or contact human support."
@@ -505,97 +498,23 @@ ${message}
   }
 });
 
-//detect messsages from the suppport group
-
-bot.action(/reply_(.+)/, async (ctx) => {
-  const adminId = ctx.from.id;
-
-  if (!ADMINS.includes(adminId)) {
-    return ctx.answerCbQuery("Unauthorized");
-  }
-
-  const userId = Number(ctx.match[1]);
-
-  const ticket = activeTickets.get(userId);
-
-  if (!ticket) {
-    return ctx.answerCbQuery("Ticket not found");
-  }
-
-  if (ticket.assignedAdmin && ticket.assignedAdmin !== adminId) {
-    return ctx.answerCbQuery("Ticket already assigned");
-  }
-
-  ticket.assignedAdmin = adminId;
-
-  activeTickets.set(userId, ticket);
-  activeConversations.set(adminId, userId);
-
-  // adminReplyMode.set(adminId, userId);
-
-  await ctx.editMessageReplyMarkup({
-    inline_keyboard: [
-      [
-        {
-          text: `👤 Assigned to ${ctx.from.first_name}`,
-          callback_data: "assigned",
-        },
-      ],
-      [
-        {
-          text: "🔒 Close Ticket",
-          callback_data: `close_${userId}`,
-        },
-      ],
-    ],
-  });
-
-  await ctx.reply(
-    `You are now handling Ticket #${ticket.ticketId}
-
-Send your reply.`,
-  );
-});
-
-bot.action(/close_(.+)/, async (ctx) => {
-  const adminId = ctx.from.id;
-
-  if (ticket.assignedAdmin !== adminId) {
-    return ctx.answerCbQuery("Only the assigned admin can close this ticket.");
-  }
-
-  if (!ADMINS.includes(adminId)) {
-    return ctx.answerCbQuery("Unauthorized");
-  }
-
-  const userId = Number(ctx.match[1]);
-
-  const ticket = activeTickets.get(userId);
-
-  if (!ticket) {
-    return ctx.answerCbQuery("Ticket already closed");
-  }
-
-  activeConversations.delete(ticket.assignedAdmin);
-
-  activeTickets.delete(userId);
-
-  await bot.telegram.sendMessage(
-    userId,
-    `✅ Your support ticket #${ticket.ticketId} has been closed.
-
-If you need further assistance, simply open a new support request.`,
-  );
-
-  await ctx.reply(`🔒 Ticket #${ticket.ticketId} closed successfully.`);
-});
-
-bot.command("stopreply", async (ctx) => {
-  activeConversations.delete(ctx.from.id);
-
-  await ctx.reply("You have exited the current conversation.");
-});
-
 bot.launch();
 
 console.log("Bot started successfully");
+
+// ==========================================
+// EXPRESS API SERVER (runs alongside the bot)
+// ==========================================
+const app = express();
+app.use(express.json());
+
+app.use("/api", broadcastRoute(bot)); // pass the same bot instance so it can send messages
+
+const PORT = process.env.PORT || 3025;
+app.listen(PORT, () => {
+  console.log(`API server running on port ${PORT}`);
+});
+
+// Graceful shutdown — stops both the bot and lets any in-flight requests finish
+process.once("SIGINT", () => bot.stop("SIGINT"));
+process.once("SIGTERM", () => bot.stop("SIGTERM"));
