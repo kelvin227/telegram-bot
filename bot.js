@@ -1,6 +1,8 @@
 const express = require("express");
 const broadcastRoute = require("./routes/function.js");
 const { Telegraf, Markup } = require("telegraf");
+const detectSpam = require("./moderation/spamDetector.js");
+const price = require("./routes/calls.js")
 const axios = require("axios");
 const knowledgeBase = require("./knowledge.js");
 const translateText = require("./ai/translate.js");
@@ -13,8 +15,6 @@ const token = process.env.BOT_TOKEN;
 
 const bot = new Telegraf(token);
 const userLanguages = new Map();
-
-
 
 async function navigate(ctx, text, keyboard) {
   await ctx.answerCbQuery();
@@ -41,9 +41,7 @@ function languageMenu() {
       Markup.button.callback("🇬🇧 English", "lang_en"),
       Markup.button.callback("🇪🇸 Español", "lang_es"),
     ],
-    [
-      Markup.button.callback("🇫🇷 Français", "lang_fr"),
-    ],
+    [Markup.button.callback("🇫🇷 Français", "lang_fr")],
   ]);
 }
 
@@ -210,16 +208,12 @@ bot.action("staking_vs_vesting", async (ctx) => {
 
 bot.action("veJBC", async (ctx) => {
   await ctx.answerCbQuery();
-  ctx.reply(
-    knowledgeBase.staking.veJBC.answer
-  );
+  ctx.reply(knowledgeBase.staking.veJBC.answer);
 });
 
 bot.action("JBCv2", async (ctx) => {
   await ctx.answerCbQuery();
-  ctx.reply(
-    knowledgeBase.staking.JBCv2.answer
-  );
+  ctx.reply(knowledgeBase.staking.JBCv2.answer);
 });
 
 bot.action("veJBC_vs_JBCv2", async (ctx) => {
@@ -229,16 +223,12 @@ bot.action("veJBC_vs_JBCv2", async (ctx) => {
 
 bot.action("vesting_completed", async (ctx) => {
   await ctx.answerCbQuery();
-  ctx.reply(
-    knowledgeBase.staking.vesting_completed.answer
-  );
+  ctx.reply(knowledgeBase.staking.vesting_completed.answer);
 });
 
 bot.action("claims", async (ctx) => {
   await ctx.answerCbQuery();
-  ctx.reply(
-    knowledgeBase.staking.claims.answer
-  );
+  ctx.reply(knowledgeBase.staking.claims.answer);
 });
 
 //Wallet & Technical Help Menu
@@ -317,6 +307,26 @@ bot.action(`ios_app`, async (ctx) => {
   );
 });
 
+bot.command(`price`, async (ctx) => {
+  const chatType = ctx.chat.type;
+
+  const isGroup = chatType === "group" || chatType === "supergroup";
+
+  if(!isGroup){
+    console.log("not a group")
+    return;
+  }
+  const username = ctx.message.from.username;
+
+  const checkPrice = await price();
+
+
+  ctx.reply(
+    `@${username}
+    ${checkPrice}`
+      );
+});
+
 //Privacy & Account Deletion Menu
 bot.action("privacy_menu", async (ctx) => {
   await navigate(
@@ -373,25 +383,19 @@ bot.action("data_retention_details", async (ctx) => {
 bot.action("account_deletion_permanent", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(
-    knowledgeBase.privacy.account_deletion_permanent.answer,
-  );
+  ctx.reply(knowledgeBase.privacy.account_deletion_permanent.answer);
 });
 
 bot.action("full_data_removal", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(
-    knowledgeBase.privacy.full_data_removal.answer,
-  );
+  ctx.reply(knowledgeBase.privacy.full_data_removal.answer);
 });
 
 bot.action("data_sharing", async (ctx) => {
   await ctx.answerCbQuery();
 
-  ctx.reply(
-    knowledgeBase.privacy.data_sharing.answer,
-  );
+  ctx.reply(knowledgeBase.privacy.data_sharing.answer);
 });
 
 bot.on("text", async (ctx) => {
@@ -408,18 +412,14 @@ bot.on("text", async (ctx) => {
   // ==========================================
   // 1. CHECK IF THIS IS A GROUP
   // ==========================================
-  const isGroup =
-    chatType === "group" ||
-    chatType === "supergroup";
+  const isGroup = chatType === "group" || chatType === "supergroup";
 
   if (isGroup) {
     const botUsername = ctx.botInfo.username;
     // ------------------------------------------
     // CHECK 1: Is the bot mentioned?
     // ------------------------------------------
-    const isMentioned = message.includes(
-      `@${botUsername}`
-    );
+    const isMentioned = message.includes(`@${botUsername}`);
 
     // ------------------------------------------
     // CHECK 2: Is the user replying to the bot?
@@ -427,11 +427,19 @@ bot.on("text", async (ctx) => {
     const isReplyToBot =
       ctx.message.reply_to_message &&
       ctx.message.reply_to_message.from &&
-      ctx.message.reply_to_message.from.id ===
-        ctx.botInfo.id;
+      ctx.message.reply_to_message.from.id === ctx.botInfo.id;
 
     // Ignore normal group conversations
     if (!isMentioned && !isReplyToBot) {
+      console.log("checking spam");
+      const detect = detectSpam(message);
+
+      console.log(detect.isSpam);
+
+      if (detect.isSpam) {
+        await ctx.telegram.deleteMessage(ctx.chat.id, ctx.message.message_id);
+        return;
+      }
       return;
     }
 
@@ -439,34 +447,25 @@ bot.on("text", async (ctx) => {
     // REMOVE BOT MENTION
     // ------------------------------------------
     const userMessage = isMentioned
-      ? message.replace(
-          new RegExp(`@${botUsername}`, "gi"),
-          ""
-        ).trim()
+      ? message.replace(new RegExp(`@${botUsername}`, "gi"), "").trim()
       : message.trim();
 
     // User mentioned the bot but didn't ask anything
     if (!userMessage) {
-      return ctx.reply(
-        "👋 How can I help you?"
-      );
+      return ctx.reply("👋 How can I help you?");
     }
 
     try {
       await ctx.sendChatAction("typing");
 
-      const result =
-        await generateAIResponse(userMessage);
+      const result = await generateAIResponse(userMessage);
 
       return ctx.reply(result.answer);
     } catch (error) {
-      console.error(
-        "AI group handler error:",
-        error
-      );
+      console.error("AI group handler error:", error);
 
       return ctx.reply(
-        "Sorry, I couldn't process your question right now. Please try again."
+        "Sorry, I couldn't process your question right now. Please try again.",
       );
     }
   }
@@ -476,23 +475,15 @@ bot.on("text", async (ctx) => {
   // ==========================================
   try {
     await ctx.sendChatAction("typing");
-        const result =
-      await generateAIResponse(message);
-      let reply = result.answer;
+    const result = await generateAIResponse(message);
+    let reply = result.answer;
 
-
-        await ctx.reply(reply);
-
-
-
+    await ctx.reply(reply);
   } catch (error) {
-    console.error(
-      "AI handler error:",
-      error
-    );
+    console.error("AI handler error:", error);
 
     await ctx.reply(
-      "Sorry, I couldn't process your question right now. Please try again or contact human support."
+      "Sorry, I couldn't process your question right now. Please try again or contact human support.",
     );
   }
 });

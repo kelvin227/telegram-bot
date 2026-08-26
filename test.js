@@ -1,13 +1,9 @@
-const detectLanguage = require("./ai/languageDetector");
+const detectFlood = require("./moderation/floodDetector");
 
-console.log(detectLanguage("What is staking?"));
+const userId = 12345;
 
-console.log(detectLanguage("¿Qué es el staking?"));
+for (let i = 1; i <= 7; i++) {
+  const result = detectFlood(userId);
 
-console.log(detectLanguage("Bonjour, comment ça va?"));
-
-console.log(detectLanguage("Hola"));
-
-console.log(detectLanguage("Merci"));
-
-console.log(detectLanguage("Ndewo"));
+  console.log(`Message ${i}:`, result);
+}
