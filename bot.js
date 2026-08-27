@@ -3,6 +3,7 @@ const broadcastRoute = require("./routes/function.js");
 const { Telegraf, Markup } = require("telegraf");
 const detectSpam = require("./moderation/spamDetector.js");
 const price = require("./routes/calls.js")
+const extractMessageContent = require("./routes/extract.js")
 const axios = require("axios");
 const knowledgeBase = require("./knowledge.js");
 const translateText = require("./ai/translate.js");
@@ -398,9 +399,9 @@ bot.action("data_sharing", async (ctx) => {
   ctx.reply(knowledgeBase.privacy.data_sharing.answer);
 });
 
-bot.on("text", async (ctx) => {
+bot.on("message", async (ctx) => {
   const senderId = ctx.from.id;
-  const message = ctx.message.text;
+  const message = extractMessageContent(ctx);
   const chatType = ctx.chat.type;
   const chatId = ctx.message.message_thread_id;
   const userLang = ctx.from.language_code || "en";
