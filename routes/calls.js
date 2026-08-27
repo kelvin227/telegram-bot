@@ -26,7 +26,7 @@ async function price() {
 
   const prices = Number(answer.data[0]?.price).toFixed(4)
 
-  return prices;
+  return `$${prices}`;
 }
 
 module.exports = price;

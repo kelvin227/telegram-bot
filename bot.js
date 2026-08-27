@@ -2,8 +2,8 @@ const express = require("express");
 const broadcastRoute = require("./routes/function.js");
 const { Telegraf, Markup } = require("telegraf");
 const detectSpam = require("./moderation/spamDetector.js");
-const price = require("./routes/calls.js")
-const extractMessageContent = require("./routes/extract.js")
+const price = require("./routes/calls.js");
+const extractMessageContent = require("./routes/extract.js");
 const axios = require("axios");
 const knowledgeBase = require("./knowledge.js");
 const translateText = require("./ai/translate.js");
@@ -52,11 +52,9 @@ bot.start((ctx) => {
 
   ctx.reply(
     `Hello ${firstname} 👋
-
-Welcome to JBC Support Bot.
-
-Please choose a select your language preferred below.`,
-    languageMenu(),
+    i am JBC support bot,
+    how may i assit you
+`,
   );
 });
 
@@ -313,19 +311,19 @@ bot.command(`price`, async (ctx) => {
 
   const isGroup = chatType === "group" || chatType === "supergroup";
 
-  if(!isGroup){
-    console.log("not a group")
+  if (!isGroup) {
+    console.log("not a group");
     return;
   }
   const username = ctx.message.from.username;
 
   const checkPrice = await price();
 
-
   ctx.reply(
     `@${username}
-    ${checkPrice}`
-      );
+    JBC is currently selling for
+    ${checkPrice} per token`,
+  );
 });
 
 //Privacy & Account Deletion Menu
