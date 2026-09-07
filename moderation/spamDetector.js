@@ -1,5 +1,27 @@
+function normalizeObfuscatedText(text) {
+  return text
+    .toLowerCase()
+    .replace(/р/g, "p")
+    .replace(/а/g, "a")
+    .replace(/е/g, "e")
+    .replace(/о/g, "o")
+    .replace(/і/g, "i")
+    .replace(/с/g, "c");
+}
+function normalizeText(text) {
+  return normalizeObfuscatedText(text)
+    .replace(/[\s\-_]+/g, "")
+    .replace(/[^\p{L}\p{N}@]/gu, "");
+}
+
+function getEmojiCount(text) {
+  const emojis = text.match(/\p{Extended_Pictographic}/gu);
+  return emojis ? emojis.length : 0;
+}
+
 function detectSpam(message) {
-  const text = message.toLowerCase().trim();
+  const normalizedMessage = normalizeText(message);
+  const text = normalizedMessage.trim();
 
   // ==========================================
   // 1. LINK DETECTION
@@ -11,6 +33,7 @@ function detectSpam(message) {
 
   // Too many links
   if (links.length >= 2) {
+    console.log("Excessive links detected:", text);
     return {
       isSpam: true,
       reason: "excessive_links",
@@ -35,12 +58,29 @@ function detectSpam(message) {
   );
 
   if (hasTelegramPromotion) {
+    console.log("Unauthorized Telegram promotion detected:", text);
     return {
       isSpam: true,
       reason: "telegram_promotion",
       message: "Unauthorized Telegram promotion detected.",
     };
   }
+  // ==========================================
+// TELEGRAM DEEP-LINK DETECTION
+// ==========================================
+
+const telegramDeepLinkPattern =
+  /tg:\/\/resolve\?domain=[a-zA-Z0-9_]+/i;
+
+if (telegramDeepLinkPattern.test(message)) {
+  console.log("Telegram deep-link spam detected:", message);
+
+  return {
+    isSpam: true,
+    reason: "telegram_deep_link",
+    message: "Suspicious Telegram bot link detected.",
+  };
+}
 
   // ==========================================
   // 3. COMMON SPAM / SCAM PHRASES
@@ -103,6 +143,28 @@ function detectSpam(message) {
     /advertise your/i,
 
     // ==========================================
+// TELEGRAM DEEP-LINK / FAKE AIRDROP SPAM
+// ==========================================
+
+/tg:\/\/resolve\?domain=/i,
+
+/tg:\/\/resolve.*(?:airdrop|bonus|claim|wallet|binance)/i,
+
+/(?:binance|wallet|airdrop|bonus|claim).{0,100}tg:\/\/resolve/i,
+
+/tg:\/\/resolve.*start=/i,
+
+/(?:claim|airdrop|bonus|welcome).*(?:\$|usd|bnb|usdt|crypto)/i,
+
+/(?:binance).*(?:airdrop|bonus|claim|wallet)/i,
+
+/(?:airdrop|bonus|claim).*(?:binance|wallet)/i,
+
+/telegram.*(?:binance|airdrop|bonus)/i,
+
+/(?:free|claim|welcome).*(?:bonus|airdrop)/i,
+
+    // ==========================================
     // FINANCIAL PROMOTIONS
     // ==========================================
     /best investment opportunity/i,
@@ -121,6 +183,9 @@ function detectSpam(message) {
     /make \$?\d+.*(?:weekly)/i,
     /earn \$?\d+. monthly/i,
     /make \$?\d+. monthly/i,
+    // Suspicious VIP promotion
+  /\bvip\s*\d+/i,
+  /vip\d+/i,
 
     // ==========================================
     // SUSPICIOUS LINKS / PHISHING LANGUAGE
@@ -160,9 +225,28 @@ function detectSpam(message) {
   const hasSpamPhrase = spamPatterns.some((pattern) => pattern.test(text));
 
   if (hasSpamPhrase) {
+    console.log("Suspicious phrase detected:", text);
     return {
       isSpam: true,
       reason: "suspicious_phrase",
+      message: "Potential spam or scam content detected.",
+    };
+  }
+
+  const suspiciousUsernames = [
+  "bcgame_lbot",
+  "rainbonus_play_bot",
+];
+
+
+const suspiciousUsername = suspiciousUsernames.some(
+  username => text.includes(`@${username}`)
+);
+  if (suspiciousUsername) {
+    console.log("Suspicious username detected:", text);
+    return {
+      isSpam: true,
+      reason: "suspicious username",
       message: "Potential spam or scam content detected.",
     };
   }

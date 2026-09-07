@@ -406,6 +406,10 @@ bot.on("message", async (ctx) => {
 
   console.log(chatId);
 
+  console.log(message);
+  console.log(ctx.message.sticker)
+  console.log(ctx.message.text)
+
   console.log("Chat type:", chatType);
 
   // ==========================================
