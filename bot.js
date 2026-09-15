@@ -13,6 +13,7 @@ require("dotenv").config();
 console.log("Starting bot...");
 
 const token = process.env.BOT_TOKEN;
+const CA = process.env.JBC_CONTRACT_ADDRESS;
 
 const bot = new Telegraf(token);
 const userLanguages = new Map();
@@ -67,6 +68,14 @@ bot.command("help", (ctx) => {
 `;
   ctx.reply(helpMessage);
 });
+
+bot.command("ca", async (ctx) => {
+  const username = ctx.message.from.username;
+
+  
+
+  await ctx.reply(` @${username}, The JBC contract address is: ${CA}`);
+})
 
 bot.action("main_menu", async (ctx) => {
   await navigate(
