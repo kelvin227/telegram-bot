@@ -444,13 +444,23 @@ bot.on("message", async (ctx) => {
     // Ignore normal group conversations
     if (!isMentioned && !isReplyToBot) {
       console.log("checking spam");
-      const detect = detectSpam(message);
+      const detect = detectSpam(message, {
+        userId: senderId,
+        entities: ctx.message.entities || ctx.message.caption_entities,
+      });
 
-      console.log(detect.isSpam);
+      console.log(detect.score, detect.isSpam, detect.reasons);
 
       if (detect.isSpam) {
         await ctx.telegram.deleteMessage(ctx.chat.id, ctx.message.message_id);
         return;
+      }
+
+      if (detect.needsReview) {
+        // Doesn't cross the delete threshold on its own — log it so you
+        // can see borderline cases and retune weights, without risking
+        // false-positive deletes on legitimate messages.
+        console.log(`[spam-review] chat=${ctx.chat.id} user=${senderId} score=${detect.score}`);
       }
       return;
     }
