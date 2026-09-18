@@ -13,8 +13,8 @@
 // --------------------------------------------------------
 // Tunables
 // --------------------------------------------------------
-const SPAM_THRESHOLD = 20; // score >= this => delete
-const REVIEW_THRESHOLD = 19; // score >= this (but < SPAM_THRESHOLD) => flag for review, don't delete
+const SPAM_THRESHOLD = 50; // score >= this => delete
+const REVIEW_THRESHOLD = 30; // score >= this (but < SPAM_THRESHOLD) => flag for review, don't delete
 
 const FLOOD_WINDOW_MS = 15_000; // look-back window for flood detection
 const FLOOD_MAX_MESSAGES = 4; // messages from same user in window before flagged
@@ -60,6 +60,45 @@ function stripZeroWidthAndInvisibles(text) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+// Strips Markdown/HTML formatting syntax so it never pollutes keyword
+// matching, caps-ratio, or repetition checks. Handles both cases: a
+// message that arrives with literal HTML tags (<b>, <a href="">, etc.)
+// and one with literal Markdown syntax (**bold**, _italic_, `code`,
+// ~~strike~~, ||spoiler||, > quote, # heading).
+function stripFormattingSyntax(rawText) {
+  let out = String(rawText || "");
+
+  // Preserve the real destination of a masked HTML link before the
+  // generic tag-strip below would otherwise delete it along with the
+  // tag: <a href="evil.com">Click here</a> -> "Click here evil.com"
+  out = out.replace(/<a\s+[^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gis, "$2 $1");
+
+  // Remaining HTML tags -> space (so "word</b>word" doesn't fuse into one token)
+  out = out.replace(/<\/?[a-z][^>]*>/gi, " ");
+
+  // Common HTML entities that leak through when tags are parsed out
+  out = out
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0*39;/gi, "'");
+
+  // Markdown bold/strike/code/spoiler markers — safe to remove outright
+  out = out.replace(/\*{1,3}|~{2,3}|`{1,3}|\|\|/g, "");
+
+  // Markdown italic underscores — only strip when they visibly WRAP a
+  // word or phrase ("_join now_" -> "join now"), so real identifiers
+  // like "my_username" are left untouched.
+  out = out.replace(/(^|\s)_+(\S.*?\S|\S)_+(?=\s|$)/g, "$1$2");
+
+  // Leading blockquote/heading markers at the start of a line
+  out = out.replace(/^[ \t]*[>#]{1,6}[ \t]*/gm, "");
+
+  return out;
+}
+
 function deconfuse(text) {
   let out = "";
   for (const ch of text) {
@@ -76,7 +115,7 @@ function deleet(text) {
 }
 
 function normalizeForMatching(rawText) {
-  const text = String(rawText || "");
+  const text = stripFormattingSyntax(rawText);
   // NFKD folds decorative Unicode letter variants (𝙈𝘼𝙏𝙃 bold/italic/
   // sans-serif blocks, fullwidth ＡＢＣ, etc.) back to plain Latin —
   // a very common way spam dodges keyword filters.
@@ -299,6 +338,32 @@ const PHRASE_CATEGORIES = [
       /\bact now\b/i,
     ],
   },
+  {
+    // Unsolicited P2P/OTC "I'll buy your crypto above market rate" scam.
+    // Reads as polite, normal prose — no links, no emoji spam — so it
+    // needs its own dedicated phrase signals rather than relying on
+    // link/style heuristics.
+    weight: 35,
+    reason: "otc_scam",
+    patterns: [
+      /buy (your )?(usdt|crypto|bitcoin|btc|eth|bnb).{0,30}(higher|above|premium).{0,25}(market|rate|price)/i,
+      /\d{1,3}\s*%\s*[-–to]{1,4}\s*\d{1,3}\s*%.{0,25}(higher|above).{0,20}market/i,
+      /(above|higher than).{0,15}market (rate|price)/i,
+      /we will transfer the funds?( to you)? first/i,
+      /if you have (usdt|crypto|bitcoin|btc|eth|bnb).{0,20}to sell/i,
+      /want to sell (your )?(usdt|crypto|bitcoin|btc|eth|bnb)/i,
+    ],
+  },
+  {
+    // Solicitation to move the conversation off-platform to close a
+    // trade, often paired with a regulatory-workaround excuse.
+    weight: 25,
+    reason: "unsolicited_trade_contact",
+    patterns: [
+      /contact me (on|via) (telegram|whatsapp|signal|wechat)/i,
+      /due to.{0,50}regulations?.{0,50}(unable|cannot|can'?t).{0,30}(purchase|buy).{0,20}directly/i,
+    ],
+  },
 ];
 
 function scorePhrases(normalized) {
@@ -407,6 +472,7 @@ function detectSpam(message, options = {}) {
   const normalized = normalizeForMatching(message);
   const collapsed = collapseLetterSpacing(normalized);
   const tight = normalizeTight(message);
+  const cleanedRaw = stripFormattingSyntax(String(message || ""));
 
   const checks = [
     scoreLinks(normalized, entities),
@@ -415,7 +481,7 @@ function detectSpam(message, options = {}) {
     scorePhrases(normalized),
     scorePhrases(collapsed),
     scoreUsername(tight),
-    scoreStyle(String(message || "")),
+    scoreStyle(cleanedRaw),
     scoreFlood(userId, normalized, now),
   ];
 

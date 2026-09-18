@@ -416,6 +416,7 @@ bot.on("message", async (ctx) => {
   console.log(chatId);
 
   console.log(message);
+  console.log(JSON.stringify(ctx.message));
   console.log(ctx.message.sticker)
   console.log(ctx.message.text)
 
