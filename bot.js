@@ -318,6 +318,8 @@ bot.action(`ios_app`, async (ctx) => {
 bot.command(`price`, async (ctx) => {
   const chatType = ctx.chat.type;
 
+  const disabled = true;
+
   const isGroup = chatType === "group" || chatType === "supergroup";
 
   if (!isGroup) {
@@ -326,13 +328,21 @@ bot.command(`price`, async (ctx) => {
   }
   const username = ctx.message.from.username;
 
-  const checkPrice = await price();
+
+  if(disabled){
+    ctx.reply(`@${username} price check through the bot has been deactivated for maintenance and will be activated soon.`)
+  }else{
+    const checkPrice = await price();
 
   ctx.reply(
-    `@${username}
+    `@${username} 
     JBC is currently selling for
     ${checkPrice} per token`,
   );
+  }
+
+  
+  
 });
 
 //Privacy & Account Deletion Menu
