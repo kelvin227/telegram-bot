@@ -13,7 +13,7 @@
 // --------------------------------------------------------
 // Tunables
 // --------------------------------------------------------
-const SPAM_THRESHOLD = 50; // score >= this => delete
+const SPAM_THRESHOLD = 20; // score >= this => delete
 const REVIEW_THRESHOLD = 30; // score >= this (but < SPAM_THRESHOLD) => flag for review, don't delete
 
 const FLOOD_WINDOW_MS = 15_000; // look-back window for flood detection
@@ -167,6 +167,13 @@ function getEmojiCount(text) {
   return emojis ? emojis.length : 0;
 }
 
+function removeEmoji(text) {
+  return text.replace(
+    /(?:\p{Regional_Indicator}{1,2}|[#*0-9]\uFE0F?\u20E3|\p{Extended_Pictographic}\uFE0F?\p{Emoji_Modifier}?(?:\u200D\p{Extended_Pictographic}\uFE0F?\p{Emoji_Modifier}?)*(?:[\u{E0020}-\u{E007E}]*\u{E007F})?)/gu,
+    "",
+  );
+}
+
 function getCapsRatio(text) {
   const letters = text.replace(/[^a-zA-Z]/g, "");
   if (letters.length < 8) return 0; // too short to judge
@@ -226,6 +233,8 @@ function scoreTelegramPromotion(normalized) {
     /t\.me\//i,
     /join (my|our|this) (group|channel|community)/i,
     /subscribe to (my|our) channel/i,
+    /instant payment/i,
+    / best (rate |rates)/i
   ];
   if (promoPatterns.some((p) => p.test(normalized))) {
     score += 35;
@@ -287,6 +296,7 @@ const PHRASE_CATEGORIES = [
       /check out my (project|token|coin|channel)/i,
       /promote your/i,
       /advertise your/i,
+      /Seeking long term (partners | partnerships)/i,
     ],
   },
   {
@@ -384,10 +394,11 @@ function scorePhrases(normalized) {
 // --------------------------------------------------------
 // Signal: known bad usernames / handles
 // --------------------------------------------------------
-const SUSPICIOUS_USERNAMES = ["bcgame_lbot", "rainbonus_play_bot"];
+const SUSPICIOUS_USERNAMES = ["bcgame_lbot", "rainbonus_play_bot", "yl6l8", "yl6l8_bot"];
 
 function scoreUsername(tight) {
-  const hit = SUSPICIOUS_USERNAMES.some((u) => tight.includes(`@${u}`) || tight.includes(u));
+  const cleaned = removeEmoji(tight);
+  const hit = SUSPICIOUS_USERNAMES.some((u) => cleaned.includes(`@${u}`) || cleaned.includes(u));
   return hit
     ? { score: 45, reasons: ["known_suspicious_username"] }
     : { score: 0, reasons: [] };
@@ -528,3 +539,4 @@ function detectSpam(message, options = {}) {
 }
 
 module.exports = detectSpam;
+module.exports.removeEmoji = removeEmoji;
