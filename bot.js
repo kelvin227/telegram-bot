@@ -417,11 +417,13 @@ bot.action("data_sharing", async (ctx) => {
 });
 
 bot.on("message", async (ctx) => {
+  const admin = ['NgeneEl', 'NETKOY', 'STEFEN_THE2ND', 'Adelasola_David',  'narazee31', 'AleTheGreez', 'NicDic007', 'Jimmyboss47']
   const senderId = ctx.from.id;
   const message = extractMessageContent(ctx);
   const chatType = ctx.chat.type;
   const chatId = ctx.message.message_thread_id;
   const userLang = ctx.from.language_code || "en";
+  const username = ctx.message.from.username;
 
   console.log(chatId);
 
@@ -429,6 +431,7 @@ bot.on("message", async (ctx) => {
   console.log(JSON.stringify(ctx.message));
   console.log(ctx.message.sticker)
   console.log(ctx.message.text)
+
 
   console.log("Chat type:", chatType);
 
@@ -462,9 +465,13 @@ bot.on("message", async (ctx) => {
 
       console.log(detect.score, detect.isSpam, detect.reasons);
 
-      if (detect.isSpam) {
+      if(admin.includes(username)){
+        return;
+      }else{
+        if (detect.isSpam) {
         await ctx.telegram.deleteMessage(ctx.chat.id, ctx.message.message_id);
         return;
+      }
       }
 
       if (detect.needsReview) {
